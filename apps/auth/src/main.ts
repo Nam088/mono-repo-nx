@@ -9,19 +9,19 @@ import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 
 import { AppModule } from './app/app.module';
+import { GrpcLoggingInterceptor } from './app/interceptors/grpc-logging.interceptor';
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
-    const globalPrefix = 'api';
-    app.setGlobalPrefix(globalPrefix);
     const appConfigService = app.get(AppConfigService);
-    const port = appConfigService.getPort(3002);
     const grpcEndpoint = appConfigService.getAuthGrpcEndpoint();
-    app.connectMicroservice(createAuthGrpcServerOptions(__dirname, grpcEndpoint));
+    app.useGlobalInterceptors(app.get(GrpcLoggingInterceptor));
+    app.connectMicroservice(createAuthGrpcServerOptions(__dirname, grpcEndpoint), {
+        inheritAppConfig: true,
+    });
 
     await app.startAllMicroservices();
-    await app.listen(port);
-    Logger.log(`🚀 Application is running on: http://localhost:${port}/${globalPrefix}`);
+    await app.init();
     Logger.log(`🚀 AUTH gRPC is running on: ${appConfigService.getAuthGrpcUrl()}`);
 }
 

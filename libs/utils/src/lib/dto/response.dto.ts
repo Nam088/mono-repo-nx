@@ -70,6 +70,16 @@ export class ResponseErrorClassDto implements ResponseErrorDto {
     details?: unknown;
 }
 
+export class ResponseMetaClassDto {
+    @Expose()
+    @ApiPropertyOptional({ example: '2026-05-01T11:22:33.000Z' })
+    timestamp?: string;
+
+    @Expose()
+    @ApiPropertyOptional({ example: 'abc-123' })
+    traceId?: string;
+}
+
 export class PaginationMetaClassDto implements PaginationMetaDto {
     @Expose()
     @ApiProperty({ example: 1 })
@@ -126,7 +136,8 @@ export class BaseResponseDto<TData = unknown> implements StandardResponseDto<TDa
     error?: ResponseErrorClassDto;
 
     @Expose()
-    @ApiPropertyOptional({ example: { traceId: 'abc-123' } })
+    @ApiPropertyOptional({ type: () => ResponseMetaClassDto })
+    @Type(() => ResponseMetaClassDto)
     meta?: ResponseMetaDto;
 
     constructor(payload: StandardResponseDto<TData>) {
@@ -155,7 +166,7 @@ export class ErrorResponseDto extends BaseResponseDto<never> {
 export class PaginatedResponseDto<TItem> extends SuccessResponseDto<PaginatedDataDto<TItem>> {
     constructor(payload?: PaginatedResponsePayload<TItem>) {
         const { items = [], page = 1, limit = 10, total = 0, message = 'OK', meta } = payload ?? {};
-        const totalPages = Math.ceil(total / limit);
+        const totalPages = Math.ceil(total / Math.max(limit, 1));
 
         super({
             data: {
@@ -173,6 +184,20 @@ export class PaginatedResponseDto<TItem> extends SuccessResponseDto<PaginatedDat
             meta,
         });
     }
+}
+
+export function buildPaginationMeta(page: number, limit: number, total: number): PaginationMetaDto {
+    const safeLimit = Math.max(limit, 1);
+    const totalPages = Math.ceil(total / safeLimit);
+
+    return {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
+    };
 }
 
 export function successResponse<TData>(

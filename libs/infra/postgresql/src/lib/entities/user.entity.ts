@@ -1,6 +1,7 @@
-import { Entity, PrimaryKey, Property } from '@mikro-orm/decorators/legacy';
+import { Entity, PrimaryKey, Property, Unique } from '@mikro-orm/decorators/legacy';
 import { v4 as uuidv4 } from 'uuid';
 
+@Unique({ properties: ['email'] })
 @Entity({ tableName: 'users' })
 export class UserEntity {
     @PrimaryKey({ type: 'string' })
@@ -11,4 +12,7 @@ export class UserEntity {
 
     @Property({ type: 'string', length: 120 })
     name!: string;
+
+    @Property({ type: 'string', length: 255, fieldName: 'password_hash' })
+    passwordHash!: string;
 }

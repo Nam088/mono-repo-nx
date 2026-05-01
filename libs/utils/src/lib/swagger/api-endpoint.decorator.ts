@@ -11,27 +11,29 @@ import {
     getSchemaPath,
 } from '@nestjs/swagger';
 
+import { PaginationMetaClassDto, ResponseErrorClassDto, ResponseMetaClassDto } from '../dto/response.dto';
+
 type SwaggerSchema = Record<string, unknown>;
 type SwaggerExampleMap = Record<string, { summary: string; value: Record<string, unknown> }>;
 
-interface NamedModelOption {
+export interface NamedModelOption {
     name: string;
     model: Type<unknown>;
 }
 
-interface DiscriminatorOption {
+export interface DiscriminatorOption {
     propertyName: string;
     mapping?: Record<string, string>;
 }
 
-interface SuccessPayloadOption {
+export interface SuccessPayloadOption {
     schema?: SwaggerSchema;
     models?: Array<Type<unknown> | NamedModelOption>;
     paginated?: boolean;
     discriminator?: DiscriminatorOption;
 }
 
-interface ApiEndpointSuccessOption {
+export interface ApiEndpointSuccessOption {
     status?: number;
     description?: string;
     payload?: SuccessPayloadOption;
@@ -43,7 +45,7 @@ interface ApiEndpointSuccessOption {
     autoExampleData?: Record<string, Record<string, unknown>>;
 }
 
-interface ApiEndpointErrorOption {
+export interface ApiEndpointErrorOption {
     status: number;
     description?: string;
     schema?: SwaggerSchema;
@@ -52,13 +54,13 @@ interface ApiEndpointErrorOption {
 
 type ApiEndpointAuthType = 'bearer' | 'basic' | 'oauth2' | 'apiKey' | 'custom';
 
-interface ApiEndpointAuthOption {
+export interface ApiEndpointAuthOption {
     type: ApiEndpointAuthType;
     schemeName?: string;
     scopes?: string[];
 }
 
-interface ApiEndpointOptions {
+export interface ApiEndpointOptions {
     summary: string;
     description?: string;
     success: ApiEndpointSuccessOption[];
@@ -296,11 +298,14 @@ function resolveSuccessExamples(successOption: ApiEndpointSuccessOption): Swagge
 }
 
 function collectResponseModels(options: ApiEndpointOptions): Type<unknown>[] {
-    const models = new Set<Type<unknown>>();
+    const models = new Set<Type<unknown>>([ResponseMetaClassDto, ResponseErrorClassDto]);
 
     for (const success of options.success) {
         for (const descriptor of getPayloadModelDescriptors(success.payload)) {
             models.add(descriptor.model);
+        }
+        if (success.payload?.paginated) {
+            models.add(PaginationMetaClassDto);
         }
     }
 

@@ -69,6 +69,12 @@ export default [
             'import-x/no-named-as-default-member': 'off',
         },
     },
+    {
+        files: ['apps/auth/**/*.spec.ts'],
+        rules: {
+            '@typescript-eslint/no-explicit-any': 'off',
+        },
+    },
     eslintConfigPrettier,
     eslintPluginPrettierRecommended,
 ];

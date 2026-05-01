@@ -7,7 +7,7 @@
     "targets": {
         "generate": {
             "executor": "nx:run-commands",
-            "cache": false,
+            "cache": true,
             "options": {
                 "command": "npx buf generate --template buf.gen.yaml && npx prettier --write \"src/lib/generated/**/*.ts\" && npx nx run grpc:lint",
                 "cwd": "libs/grpc"

@@ -5,6 +5,11 @@ package auth.v1;
 service AuthService {
   rpc GetStatus (GetStatusRequest) returns (GetStatusResponse);
   rpc Ping (PingRequest) returns (PingResponse);
+  rpc Register (RegisterRequest) returns (RegisterResponse);
+  rpc Login (LoginRequest) returns (LoginResponse);
+  rpc ValidateAccessToken (ValidateAccessTokenRequest) returns (ValidateAccessTokenResponse);
+  rpc RefreshToken (RefreshTokenRequest) returns (LoginResponse);
+  rpc Logout (LogoutRequest) returns (LogoutResponse);
 }
 
 message GetStatusRequest {}
@@ -19,4 +24,51 @@ message PingRequest {
 
 message PingResponse {
   string message = 1;
+}
+
+message RegisterRequest {
+  string email = 1;
+  string name = 2;
+  string password = 3;
+  optional string idempotency_key = 4;
+}
+
+message RegisterResponse {
+  string user_id = 1;
+  string email = 2;
+  string name = 3;
+  bool created = 4;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  string user_id = 1;
+  string access_token = 2;
+  string refresh_token = 3;
+}
+
+message ValidateAccessTokenRequest {
+  string access_token = 1;
+}
+
+message ValidateAccessTokenResponse {
+  string user_id = 1;
+  string email = 2;
+  string sid = 3;
+}
+
+message RefreshTokenRequest {
+  string refresh_token = 1;
+}
+
+message LogoutRequest {
+  string user_id = 1;
+}
+
+message LogoutResponse {
+  bool success = 1;
 }

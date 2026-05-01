@@ -3,19 +3,21 @@ import { join } from 'node:path';
 import { Migrator } from '@mikro-orm/migrations';
 import { defineConfig } from '@mikro-orm/postgresql';
 import { SeedManager } from '@mikro-orm/seeder';
-import { parseEnv } from '@nam088/config';
 
-const env = parseEnv(process.env);
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { parseEnv } from '../../config/src/lib/config';
+
+const parsedEnv = parseEnv(process.env);
 
 export default defineConfig({
-    host: env.POSTGRES_HOST,
-    port: env.POSTGRES_PORT,
-    dbName: env.POSTGRES_DB,
-    user: env.POSTGRES_USER,
-    password: env.POSTGRES_PASSWORD,
+    host: parsedEnv.POSTGRES_HOST,
+    port: parsedEnv.POSTGRES_PORT,
+    dbName: parsedEnv.POSTGRES_DB,
+    user: parsedEnv.POSTGRES_USER,
+    password: parsedEnv.POSTGRES_PASSWORD,
     preferTs: true,
-    entities: [join(process.cwd(), 'dist/libs/infra/postgresql/src/lib/entities/user.entity.js')],
-    entitiesTs: [join(process.cwd(), 'libs/infra/postgresql/src/lib/entities/user.entity.ts')],
+    entities: [join(process.cwd(), 'dist/libs/infra/postgresql/src/lib/entities/*.entity.js')],
+    entitiesTs: [join(process.cwd(), 'libs/infra/postgresql/src/lib/entities/*.entity.ts')],
     extensions: [Migrator, SeedManager],
     migrations: {
         path: join(process.cwd(), 'libs/infra/postgresql/migrations'),

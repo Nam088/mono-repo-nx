@@ -56,7 +56,9 @@
             "dependsOn": ["build"],
             "options": {
                 "buildTarget": "api:build",
-                "runBuildTargetDependencies": false
+                "runBuildTargetDependencies": false,
+                "watch": true,
+                "debounce": 300
             },
             "configurations": {
                 "development": {
