@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package auth.v1;
+
+service AuthService {
+  rpc GetStatus (GetStatusRequest) returns (GetStatusResponse);
+  rpc Ping (PingRequest) returns (PingResponse);
+}
+
+message GetStatusRequest {}
+
+message GetStatusResponse {
+  string message = 1;
+}
+
+message PingRequest {
+  string name = 1;
+}
+
+message PingResponse {
+  string message = 1;
+}

@@ -1,0 +1,14 @@
+{
+    "extends": "../../../tsconfig.base.json",
+    "compilerOptions": {
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext",
+        "target": "ES2021",
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "ignoreDeprecations": "6.0"
+    },
+    "include": ["mikro-orm.config.ts", "src/**/*.ts", "migrations/**/*.ts", "seeders/**/*.ts"]
+}

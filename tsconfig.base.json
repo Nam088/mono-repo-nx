@@ -1,0 +1,25 @@
+{
+    "compileOnSave": false,
+    "compilerOptions": {
+        "rootDir": ".",
+        "sourceMap": true,
+        "declaration": false,
+        "moduleResolution": "node16",
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "importHelpers": true,
+        "target": "es2015",
+        "module": "esnext",
+        "lib": ["es2020", "dom"],
+        "skipLibCheck": true,
+        "skipDefaultLibCheck": true,
+        "paths": {
+            "@nam088/config": ["./libs/config/src/index.ts"],
+            "@nam088/utils": ["./libs/utils/src/index.ts"],
+            "@nam088/grpc": ["./libs/grpc/src/index.ts"],
+            "@nam088/redis": ["./libs/infra/redis/src/index.ts"],
+            "@nam088/postgresql": ["./libs/infra/postgresql/src/index.ts"]
+        }
+    },
+    "exclude": ["node_modules", "tmp"]
+}
