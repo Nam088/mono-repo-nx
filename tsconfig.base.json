@@ -19,7 +19,8 @@
             "@nam088/grpc": ["./libs/grpc/src/index.ts"],
             "@nam088/redis": ["./libs/infra/redis/src/index.ts"],
             "@nam088/postgresql": ["./libs/infra/postgresql/src/index.ts"],
-            "@nam088/rabbitmq": ["./libs/infra/rabbitmq/src/index.ts"]
+            "@nam088/rabbitmq": ["./libs/infra/rabbitmq/src/index.ts"],
+            "@nam088/permission": ["./libs/security/permission/src/index.ts"]
         }
     },
     "exclude": ["node_modules", "tmp"]

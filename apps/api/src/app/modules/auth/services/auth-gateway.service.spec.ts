@@ -11,6 +11,7 @@ describe('AuthGatewayService', () => {
     let service: AuthGatewayService;
     const authGrpcServiceMock = {
         getStatus: vi.fn(() => of({ message: 'ok' })),
+        getUserPermissions: vi.fn(() => of({ permissions: ['user:read'] })),
     };
     const grpcClientMock = {
         getService: vi.fn(() => authGrpcServiceMock),
@@ -39,6 +40,14 @@ describe('AuthGatewayService', () => {
         it('should proxy getStatus through wrapper', async () => {
             const result = await service.getStatus();
             expect(result).toEqual({ message: 'ok' });
+            expect(grpcWrapperMock.execute).toHaveBeenCalled();
+        });
+    });
+
+    describe('getUserPermissions', () => {
+        it('should proxy getUserPermissions through wrapper', async () => {
+            const result = await service.getUserPermissions({ userId: 'u1', sid: 's1' });
+            expect(result).toEqual({ permissions: ['user:read'] });
             expect(grpcWrapperMock.execute).toHaveBeenCalled();
         });
     });

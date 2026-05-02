@@ -4,6 +4,7 @@ import { CommandBus, QueryBus } from '@nestjs/cqrs';
 
 import { PingAuthCommand } from '../../platform/commands/ping-auth.command';
 import { GetAuthStatusQuery } from '../../platform/queries/get-auth-status.query';
+import { GetUserPermissionsCommand } from '../cqrs/commands/get-user-permissions.command';
 import { LoginCommand } from '../cqrs/commands/login.command';
 import { LogoutCommand } from '../cqrs/commands/logout.command';
 import { RefreshTokenCommand } from '../cqrs/commands/refresh-token.command';
@@ -41,6 +42,10 @@ export class AuthGrpcController implements auth.v1.AuthServiceController {
 
     validateAccessToken(data: auth.v1.ValidateAccessTokenRequest): Promise<auth.v1.ValidateAccessTokenResponse> {
         return this.commandBus.execute(new ValidateAccessTokenCommand(data.accessToken));
+    }
+
+    getUserPermissions(data: auth.v1.GetUserPermissionsRequest): Promise<auth.v1.GetUserPermissionsResponse> {
+        return this.commandBus.execute(new GetUserPermissionsCommand(data.userId, data.sid));
     }
 
     refreshToken(data: auth.v1.RefreshTokenRequest): Promise<auth.v1.LoginResponse> {

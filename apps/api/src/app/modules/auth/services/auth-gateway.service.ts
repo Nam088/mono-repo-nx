@@ -48,4 +48,10 @@ export class AuthGatewayService implements OnModuleInit {
             this.authGrpcService.validateAccessToken(data, metadata),
         );
     }
+
+    async getUserPermissions(data: auth.v1.GetUserPermissionsRequest): Promise<auth.v1.GetUserPermissionsResponse> {
+        return this.grpcClientWrapperService.execute((metadata) =>
+            this.authGrpcService.getUserPermissions(data, metadata),
+        );
+    }
 }

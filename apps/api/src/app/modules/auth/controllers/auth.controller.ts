@@ -1,3 +1,4 @@
+import { P, PermissionGuard, RequirePermission } from '@nam088/permission';
 import { ApiEndpoint, successResponse } from '@nam088/utils';
 import { Body, Controller, Get, Post, Query, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
 
@@ -136,6 +137,34 @@ export class AuthController {
                 sid: req.user.sid,
             },
             'Get profile success',
+        );
+    }
+
+    @Get('demo-user-read')
+    @UseGuards(JwtAccessGuard, PermissionGuard)
+    @RequirePermission(P.user.read)
+    @ApiEndpoint({
+        summary: 'Demo: check user read permission',
+        description: 'Simple permission demo endpoint. Permission decision is resolved via Auth gRPC flow.',
+        success: [{ description: 'Permission check success' }],
+        errors: [{ status: 403, description: 'Missing required permission user:read' }],
+        auth: [
+            {
+                type: 'bearer',
+            },
+        ],
+    })
+    demoUserRead(@Req() req: { user?: AuthenticatedUser }) {
+        if (!req.user?.sub) {
+            throw new UnauthorizedException('invalid_access_token');
+        }
+        return successResponse(
+            {
+                userId: req.user.sub,
+                sid: req.user.sid,
+                requiredPermission: P.user.read,
+            },
+            'User read permission granted',
         );
     }
 }

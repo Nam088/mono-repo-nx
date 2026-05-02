@@ -58,6 +58,15 @@ export interface ValidateAccessTokenResponse {
     sid: string;
 }
 
+export interface GetUserPermissionsRequest {
+    userId: string;
+    sid: string;
+}
+
+export interface GetUserPermissionsResponse {
+    permissions: string[];
+}
+
 export interface RefreshTokenRequest {
     refreshToken: string;
 }
@@ -539,6 +548,91 @@ export const ValidateAccessTokenResponse: MessageFns<ValidateAccessTokenResponse
     },
 };
 
+function createBaseGetUserPermissionsRequest(): GetUserPermissionsRequest {
+    return { userId: '', sid: '' };
+}
+
+export const GetUserPermissionsRequest: MessageFns<GetUserPermissionsRequest> = {
+    encode(message: GetUserPermissionsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        if (message.userId !== '') {
+            writer.uint32(10).string(message.userId);
+        }
+        if (message.sid !== '') {
+            writer.uint32(18).string(message.sid);
+        }
+        return writer;
+    },
+
+    decode(input: BinaryReader | Uint8Array, length?: number): GetUserPermissionsRequest {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseGetUserPermissionsRequest();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 10) {
+                        break;
+                    }
+
+                    message.userId = reader.string();
+                    continue;
+                }
+                case 2: {
+                    if (tag !== 18) {
+                        break;
+                    }
+
+                    message.sid = reader.string();
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    },
+};
+
+function createBaseGetUserPermissionsResponse(): GetUserPermissionsResponse {
+    return { permissions: [] };
+}
+
+export const GetUserPermissionsResponse: MessageFns<GetUserPermissionsResponse> = {
+    encode(message: GetUserPermissionsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+        for (const v of message.permissions) {
+            writer.uint32(10).string(v!);
+        }
+        return writer;
+    },
+
+    decode(input: BinaryReader | Uint8Array, length?: number): GetUserPermissionsResponse {
+        const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+        const end = length === undefined ? reader.len : reader.pos + length;
+        const message = createBaseGetUserPermissionsResponse();
+        while (reader.pos < end) {
+            const tag = reader.uint32();
+            switch (tag >>> 3) {
+                case 1: {
+                    if (tag !== 10) {
+                        break;
+                    }
+
+                    message.permissions.push(reader.string());
+                    continue;
+                }
+            }
+            if ((tag & 7) === 4 || tag === 0) {
+                break;
+            }
+            reader.skip(tag & 7);
+        }
+        return message;
+    },
+};
+
 function createBaseRefreshTokenRequest(): RefreshTokenRequest {
     return { refreshToken: '' };
 }
@@ -661,6 +755,8 @@ export interface AuthServiceClient {
 
     validateAccessToken(request: ValidateAccessTokenRequest): Observable<ValidateAccessTokenResponse>;
 
+    getUserPermissions(request: GetUserPermissionsRequest): Observable<GetUserPermissionsResponse>;
+
     refreshToken(request: RefreshTokenRequest): Observable<LoginResponse>;
 
     logout(request: LogoutRequest): Observable<LogoutResponse>;
@@ -681,6 +777,10 @@ export interface AuthServiceController {
         request: ValidateAccessTokenRequest,
     ): Promise<ValidateAccessTokenResponse> | Observable<ValidateAccessTokenResponse> | ValidateAccessTokenResponse;
 
+    getUserPermissions(
+        request: GetUserPermissionsRequest,
+    ): Promise<GetUserPermissionsResponse> | Observable<GetUserPermissionsResponse> | GetUserPermissionsResponse;
+
     refreshToken(request: RefreshTokenRequest): Promise<LoginResponse> | Observable<LoginResponse> | LoginResponse;
 
     logout(request: LogoutRequest): Promise<LogoutResponse> | Observable<LogoutResponse> | LogoutResponse;
@@ -694,6 +794,7 @@ export function AuthServiceControllerMethods() {
             'register',
             'login',
             'validateAccessToken',
+            'getUserPermissions',
             'refreshToken',
             'logout',
         ];
@@ -760,6 +861,17 @@ export const AuthServiceService = {
             Buffer.from(ValidateAccessTokenResponse.encode(value).finish()),
         responseDeserialize: (value: Buffer): ValidateAccessTokenResponse => ValidateAccessTokenResponse.decode(value),
     },
+    getUserPermissions: {
+        path: '/auth.v1.AuthService/GetUserPermissions' as const,
+        requestStream: false as const,
+        responseStream: false as const,
+        requestSerialize: (value: GetUserPermissionsRequest): Buffer =>
+            Buffer.from(GetUserPermissionsRequest.encode(value).finish()),
+        requestDeserialize: (value: Buffer): GetUserPermissionsRequest => GetUserPermissionsRequest.decode(value),
+        responseSerialize: (value: GetUserPermissionsResponse): Buffer =>
+            Buffer.from(GetUserPermissionsResponse.encode(value).finish()),
+        responseDeserialize: (value: Buffer): GetUserPermissionsResponse => GetUserPermissionsResponse.decode(value),
+    },
     refreshToken: {
         path: '/auth.v1.AuthService/RefreshToken' as const,
         requestStream: false as const,
@@ -787,6 +899,7 @@ export interface AuthServiceServer extends UntypedServiceImplementation {
     register: handleUnaryCall<RegisterRequest, RegisterResponse>;
     login: handleUnaryCall<LoginRequest, LoginResponse>;
     validateAccessToken: handleUnaryCall<ValidateAccessTokenRequest, ValidateAccessTokenResponse>;
+    getUserPermissions: handleUnaryCall<GetUserPermissionsRequest, GetUserPermissionsResponse>;
     refreshToken: handleUnaryCall<RefreshTokenRequest, LoginResponse>;
     logout: handleUnaryCall<LogoutRequest, LogoutResponse>;
 }

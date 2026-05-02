@@ -29,6 +29,11 @@ type ValidateAccessTokenPayload = {
     accessToken: string;
 };
 
+type GetUserPermissionsPayload = {
+    userId: string;
+    sid: string;
+};
+
 type LogoutPayload = {
     userId: string;
 };
@@ -205,6 +210,29 @@ export class AuthService {
         };
     }
 
+    async getUserPermissions(payload: GetUserPermissionsPayload): Promise<{ permissions: string[] }> {
+        const session = await this.getSession(payload.userId);
+        if (!session || session.sid !== payload.sid) {
+            throw new RpcException({ code: GrpcStatus.UNAUTHENTICATED, message: 'invalid_access_token' });
+        }
+
+        const rawPermissions = await this.redisService.getClient().get(this.buildPermissionsKey(payload.userId));
+        if (!rawPermissions) {
+            return { permissions: ['user:read'] };
+        }
+
+        try {
+            const parsed = JSON.parse(rawPermissions) as unknown;
+            if (!Array.isArray(parsed)) {
+                return { permissions: ['user:read'] };
+            }
+            const permissions = parsed.filter((item): item is string => typeof item === 'string');
+            return { permissions: permissions.length > 0 ? permissions : ['user:read'] };
+        } catch {
+            return { permissions: ['user:read'] };
+        }
+    }
+
     private async hashPassword(rawPassword: string): Promise<string> {
         return argon2.hash(rawPassword);
     }
@@ -371,6 +399,10 @@ export class AuthService {
 
     private buildRefreshLockKey(userId: string): string {
         return `auth:refresh:lock:${userId}`;
+    }
+
+    private buildPermissionsKey(userId: string): string {
+        return `auth:permissions:user:${userId}`;
     }
 
     private hashString(value: string): string {

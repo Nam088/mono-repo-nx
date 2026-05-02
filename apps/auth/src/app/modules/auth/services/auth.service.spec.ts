@@ -40,6 +40,16 @@ function extractRpcCode(error: unknown): number | undefined {
 }
 
 describe('AuthService security flows', () => {
+    it('hashes and verifies password with argon2', async () => {
+        const service = createAuthService();
+        const password = 'StrongPassword@123';
+        const passwordHash = await (service as any).hashPassword(password);
+
+        expect(passwordHash).toMatch(/^\$argon2/);
+        await expect((service as any).verifyPassword(password, passwordHash)).resolves.toBe(true);
+        await expect((service as any).verifyPassword('wrong-password', passwordHash)).resolves.toBe(false);
+    });
+
     it('rejects validateAccessToken when session is missing', async () => {
         const service = createAuthService();
         vi.spyOn(service as any, 'enforceRateLimit' as any).mockResolvedValue(undefined);
@@ -93,5 +103,35 @@ describe('AuthService security flows', () => {
         await service
             .refreshToken({ refreshToken: 'refresh-token' })
             .catch((error) => expect(extractRpcCode(error)).toBe(GrpcStatus.ABORTED));
+    });
+
+    it('getUserPermissions returns fallback permission when redis key missing', async () => {
+        const service = createAuthService();
+        vi.spyOn(service as any, 'getSession').mockResolvedValue({
+            userId: 'user-1',
+            sid: 'sid-1',
+            accessJtiHash: 'hash',
+            jtiHash: 'refresh-hash',
+            refreshExpiresAt: Date.now(),
+        });
+
+        await expect(service.getUserPermissions({ userId: 'user-1', sid: 'sid-1' })).resolves.toEqual({
+            permissions: ['user:read'],
+        });
+    });
+
+    it('getUserPermissions rejects when sid mismatches', async () => {
+        const service = createAuthService();
+        vi.spyOn(service as any, 'getSession').mockResolvedValue({
+            userId: 'user-1',
+            sid: 'sid-a',
+            accessJtiHash: 'hash',
+            jtiHash: 'refresh-hash',
+            refreshExpiresAt: Date.now(),
+        });
+
+        await service
+            .getUserPermissions({ userId: 'user-1', sid: 'sid-b' })
+            .catch((error) => expect(extractRpcCode(error)).toBe(GrpcStatus.UNAUTHENTICATED));
     });
 });

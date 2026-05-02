@@ -8,6 +8,7 @@ service AuthService {
   rpc Register (RegisterRequest) returns (RegisterResponse);
   rpc Login (LoginRequest) returns (LoginResponse);
   rpc ValidateAccessToken (ValidateAccessTokenRequest) returns (ValidateAccessTokenResponse);
+  rpc GetUserPermissions (GetUserPermissionsRequest) returns (GetUserPermissionsResponse);
   rpc RefreshToken (RefreshTokenRequest) returns (LoginResponse);
   rpc Logout (LogoutRequest) returns (LogoutResponse);
 }
@@ -58,6 +59,15 @@ message ValidateAccessTokenResponse {
   string user_id = 1;
   string email = 2;
   string sid = 3;
+}
+
+message GetUserPermissionsRequest {
+  string user_id = 1;
+  string sid = 2;
+}
+
+message GetUserPermissionsResponse {
+  repeated string permissions = 1;
 }
 
 message RefreshTokenRequest {

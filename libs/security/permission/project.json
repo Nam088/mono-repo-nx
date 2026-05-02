@@ -1,0 +1,25 @@
+{
+    "name": "permission",
+    "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/security/permission/src",
+    "projectType": "library",
+    "tags": [],
+    "targets": {
+        "generate-refs": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "tsx libs/security/permission/tools/generate-permission-refs.ts"
+            }
+        },
+        "build": {
+            "executor": "@nx/js:tsc",
+            "outputs": ["{options.outputPath}"],
+            "options": {
+                "outputPath": "dist/libs/security/permission",
+                "main": "libs/security/permission/src/index.ts",
+                "tsConfig": "libs/security/permission/tsconfig.lib.json",
+                "assets": ["libs/security/permission/*.md"]
+            }
+        }
+    }
+}

@@ -1,5 +1,6 @@
 import { AppConfigService } from '@nam088/config';
 import { AUTH_GRPC_CLIENT_TOKEN, createAuthGrpcClientOptions } from '@nam088/grpc';
+import { PermissionGuard, PERMISSIONS_RESOLVER } from '@nam088/permission';
 import { Module } from '@nestjs/common';
 import { ClientsModule } from '@nestjs/microservices';
 import { PassportModule } from '@nestjs/passport';
@@ -8,6 +9,7 @@ import { GrpcClientWrapperService } from '../../clients/grpc-client-wrapper.serv
 import { AuthController } from './controllers/auth.controller';
 import { JwtAccessGuard } from './guards/jwt-access.guard';
 import { AuthGatewayService } from './services/auth-gateway.service';
+import { GrpcPermissionsResolverService } from './services/grpc-permissions-resolver.service';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 
 @Module({
@@ -23,7 +25,18 @@ import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
         ]),
     ],
     controllers: [AuthController],
-    providers: [GrpcClientWrapperService, AuthGatewayService, JwtRefreshStrategy, JwtAccessGuard],
-    exports: [AuthGatewayService, PassportModule, JwtRefreshStrategy],
+    providers: [
+        GrpcClientWrapperService,
+        AuthGatewayService,
+        GrpcPermissionsResolverService,
+        {
+            provide: PERMISSIONS_RESOLVER,
+            useExisting: GrpcPermissionsResolverService,
+        },
+        PermissionGuard,
+        JwtRefreshStrategy,
+        JwtAccessGuard,
+    ],
+    exports: [AuthGatewayService, PassportModule, JwtRefreshStrategy, JwtAccessGuard],
 })
 export class AuthModule {}
