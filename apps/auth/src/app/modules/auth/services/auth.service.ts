@@ -3,7 +3,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { status as GrpcStatus } from '@grpc/grpc-js';
 import { EntityManager } from '@mikro-orm/postgresql';
 import { AppConfigService } from '@nam088/config';
-import { IdempotencyKeyEntity, OutboxEventEntity, UserEntity } from '@nam088/postgresql';
+import { UserEntity } from '@nam088/postgresql';
 import { RedisService } from '@nam088/redis';
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -14,7 +14,6 @@ type RegisterPayload = {
     email: string;
     name: string;
     password: string;
-    idempotencyKey?: string;
 };
 
 type LoginPayload = {
@@ -85,29 +84,9 @@ export class AuthService {
     ): Promise<{ userId: string; email: string; name: string; created: boolean }> {
         const normalizedEmail = payload.email.trim().toLowerCase();
         const normalizedName = payload.name.trim();
-        const requestHash = this.hashRequest({
-            email: normalizedEmail,
-            name: normalizedName,
-            password: payload.password,
-        });
 
         const em = this.em.fork();
         return em.transactional(async (tx) => {
-            const existingIdempotency = await this.claimOrLoadIdempotency(
-                tx,
-                payload.idempotencyKey,
-                'auth.register',
-                requestHash,
-            );
-            if (existingIdempotency?.responseBody) {
-                return existingIdempotency.responseBody as {
-                    userId: string;
-                    email: string;
-                    name: string;
-                    created: boolean;
-                };
-            }
-
             const existingUser = await tx.findOne(UserEntity, { email: normalizedEmail });
             if (existingUser) {
                 throw new RpcException({ code: GrpcStatus.ALREADY_EXISTS, message: 'Email already exists' });
@@ -120,28 +99,13 @@ export class AuthService {
             });
             tx.persist(user);
 
-            const response = {
+            await tx.flush();
+            return {
                 userId: user.id,
                 email: user.email,
                 name: user.name,
                 created: true,
             };
-            this.enqueueOutbox(tx, 'User', user.id, 'UserRegistered', {
-                userId: user.id,
-                email: user.email,
-                name: user.name,
-            });
-
-            await this.markIdempotencyCompleted(
-                tx,
-                payload.idempotencyKey,
-                'auth.register',
-                requestHash,
-                response,
-                200,
-            );
-            await tx.flush();
-            return response;
         });
     }
 
@@ -169,10 +133,6 @@ export class AuthService {
                 accessToken: tokenPair.accessToken,
                 refreshToken: tokenPair.refreshToken,
             };
-            this.enqueueOutbox(tx, 'User', user.id, 'UserLoggedIn', {
-                userId: user.id,
-                email: user.email,
-            });
 
             await tx.flush();
             return response;
@@ -243,96 +203,6 @@ export class AuthService {
             email: claims.email ?? '',
             sid: claims.sid,
         };
-    }
-
-    private async claimOrLoadIdempotency(
-        em: EntityManager,
-        idempotencyKey: string | undefined,
-        operation: string,
-        requestHash: string,
-    ): Promise<IdempotencyKeyEntity | null> {
-        if (!idempotencyKey) {
-            return null;
-        }
-
-        const record = await em.findOne(IdempotencyKeyEntity, {
-            idempotencyKey,
-            operation,
-        });
-        if (!record) {
-            em.persist(
-                em.create(IdempotencyKeyEntity, {
-                    idempotencyKey,
-                    operation,
-                    requestHash,
-                    status: 'processing',
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                }),
-            );
-            return null;
-        }
-
-        if (record.requestHash !== requestHash) {
-            throw new RpcException({
-                code: GrpcStatus.FAILED_PRECONDITION,
-                message: 'Idempotency key payload mismatch',
-            });
-        }
-
-        if (record.status === 'completed') {
-            return record;
-        }
-
-        throw new RpcException({ code: GrpcStatus.ABORTED, message: 'Idempotency key is still processing' });
-    }
-
-    private async markIdempotencyCompleted(
-        em: EntityManager,
-        idempotencyKey: string | undefined,
-        operation: string,
-        requestHash: string,
-        responseBody: Record<string, unknown>,
-        responseCode: number,
-    ): Promise<void> {
-        if (!idempotencyKey) {
-            return;
-        }
-
-        const record = await em.findOneOrFail(IdempotencyKeyEntity, {
-            idempotencyKey,
-            operation,
-        });
-
-        record.status = 'completed';
-        record.responseCode = responseCode;
-        record.responseBody = responseBody;
-        record.completedAt = new Date();
-    }
-
-    private enqueueOutbox(
-        em: EntityManager,
-        aggregateType: string,
-        aggregateId: string,
-        eventType: string,
-        payload: Record<string, unknown>,
-    ): void {
-        em.persist(
-            em.create(OutboxEventEntity, {
-                aggregateType,
-                aggregateId,
-                eventType,
-                payload,
-                status: 'pending',
-                retryCount: 0,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            }),
-        );
-    }
-
-    private hashRequest(payload: Record<string, unknown>): string {
-        return createHash('sha256').update(JSON.stringify(payload)).digest('hex');
     }
 
     private async hashPassword(rawPassword: string): Promise<string> {

@@ -1,8 +1,8 @@
 import { auth } from '@nam088/grpc';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 
-import { AuthService } from '../../auth.service';
-import { ValidateAccessTokenCommand } from './validate-access-token.command';
+import { AuthService } from '../../services/auth.service';
+import { ValidateAccessTokenCommand } from '../commands/validate-access-token.command';
 
 @CommandHandler(ValidateAccessTokenCommand)
 export class ValidateAccessTokenHandler implements ICommandHandler<

@@ -1,8 +1,8 @@
 import { auth } from '@nam088/grpc';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 
-import { AuthService } from '../../auth.service';
-import { RefreshTokenCommand } from './refresh-token.command';
+import { AuthService } from '../../services/auth.service';
+import { RefreshTokenCommand } from '../commands/refresh-token.command';
 
 @CommandHandler(RefreshTokenCommand)
 export class RefreshTokenCommandHandler implements ICommandHandler<RefreshTokenCommand, auth.v1.LoginResponse> {

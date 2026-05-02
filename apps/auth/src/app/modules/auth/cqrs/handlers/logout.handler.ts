@@ -1,8 +1,8 @@
 import { auth } from '@nam088/grpc';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 
-import { AuthService } from '../../auth.service';
-import { LogoutCommand } from './logout.command';
+import { AuthService } from '../../services/auth.service';
+import { LogoutCommand } from '../commands/logout.command';
 
 @CommandHandler(LogoutCommand)
 export class LogoutCommandHandler implements ICommandHandler<LogoutCommand, auth.v1.LogoutResponse> {

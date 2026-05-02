@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 
-import { AppService } from '../../app.service';
-import { AuthenticatedUser } from './auth-user.type';
+import { AuthGatewayService } from '../services/auth-gateway.service';
+import { AuthenticatedUser } from '../types/auth-user.type';
 
 type RequestLike = {
     headers?: Record<string, string | string[] | undefined>;
@@ -10,7 +10,7 @@ type RequestLike = {
 
 @Injectable()
 export class JwtAccessGuard implements CanActivate {
-    constructor(private readonly appService: AppService) {}
+    constructor(private readonly authGateway: AuthGatewayService) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const request = context.switchToHttp().getRequest<RequestLike>();
@@ -19,7 +19,7 @@ export class JwtAccessGuard implements CanActivate {
             throw new UnauthorizedException('invalid_access_token');
         }
 
-        const validated = await this.appService.validateAccessToken({ accessToken });
+        const validated = await this.authGateway.validateAccessToken({ accessToken });
         request.user = {
             sub: validated.userId,
             email: validated.email || undefined,

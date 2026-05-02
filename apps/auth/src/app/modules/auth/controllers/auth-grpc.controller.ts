@@ -2,13 +2,13 @@ import { auth } from '@nam088/grpc';
 import { Controller, Get } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 
-import { PingAuthCommand } from '../../cqrs/commands/ping-auth.command';
-import { GetAuthStatusQuery } from '../../cqrs/queries/get-auth-status.query';
-import { LoginCommand } from './cqrs/commands/login.command';
-import { LogoutCommand } from './cqrs/commands/logout.command';
-import { RefreshTokenCommand } from './cqrs/commands/refresh-token.command';
-import { RegisterCommand } from './cqrs/commands/register.command';
-import { ValidateAccessTokenCommand } from './cqrs/commands/validate-access-token.command';
+import { PingAuthCommand } from '../../platform/commands/ping-auth.command';
+import { GetAuthStatusQuery } from '../../platform/queries/get-auth-status.query';
+import { LoginCommand } from '../cqrs/commands/login.command';
+import { LogoutCommand } from '../cqrs/commands/logout.command';
+import { RefreshTokenCommand } from '../cqrs/commands/refresh-token.command';
+import { RegisterCommand } from '../cqrs/commands/register.command';
+import { ValidateAccessTokenCommand } from '../cqrs/commands/validate-access-token.command';
 
 @Controller()
 @auth.v1.AuthServiceControllerMethods()
@@ -32,9 +32,7 @@ export class AuthGrpcController implements auth.v1.AuthServiceController {
     }
 
     register(data: auth.v1.RegisterRequest): Promise<auth.v1.RegisterResponse> {
-        return this.commandBus.execute(
-            new RegisterCommand(data.email, data.name, data.password, data.idempotencyKey ?? undefined),
-        );
+        return this.commandBus.execute(new RegisterCommand(data.email, data.name, data.password));
     }
 
     login(data: auth.v1.LoginRequest): Promise<auth.v1.LoginResponse> {

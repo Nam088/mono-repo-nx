@@ -2,14 +2,14 @@ import { Module } from '@nestjs/common';
 import { CqrsModule } from '@nestjs/cqrs';
 import { JwtModule } from '@nestjs/jwt';
 
-import { GrpcLoggingInterceptor } from '../../interceptors/grpc-logging.interceptor';
-import { AuthService } from './auth.service';
-import { AuthGrpcController } from './auth-grpc.controller';
-import { LoginCommandHandler } from './cqrs/commands/login.handler';
-import { LogoutCommandHandler } from './cqrs/commands/logout.handler';
-import { RefreshTokenCommandHandler } from './cqrs/commands/refresh-token.handler';
-import { RegisterCommandHandler } from './cqrs/commands/register.handler';
-import { ValidateAccessTokenHandler } from './cqrs/commands/validate-access-token.handler';
+import { AuthGrpcController } from './controllers/auth-grpc.controller';
+import { LoginCommandHandler } from './cqrs/handlers/login.handler';
+import { LogoutCommandHandler } from './cqrs/handlers/logout.handler';
+import { RefreshTokenCommandHandler } from './cqrs/handlers/refresh-token.handler';
+import { RegisterCommandHandler } from './cqrs/handlers/register.handler';
+import { ValidateAccessTokenHandler } from './cqrs/handlers/validate-access-token.handler';
+import { GrpcLoggingInterceptor } from './interceptors/grpc-logging.interceptor';
+import { AuthService } from './services/auth.service';
 
 const commandHandlers = [
     RegisterCommandHandler,

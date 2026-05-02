@@ -3,24 +3,29 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
-import { AuthenticatedUser } from './auth-user.type';
+import { AuthenticatedUser } from '../types/auth-user.type';
 
-type AccessJwtPayload = {
+type RefreshJwtPayload = {
     sub: string;
-    email?: string;
     sid: string;
+    jti: string;
     typ: 'access' | 'refresh';
     iat?: number;
     exp?: number;
 };
 
+function extractRefreshToken(req: { body?: Record<string, unknown> }): string | null {
+    const token = req?.body?.refreshToken;
+    return typeof token === 'string' ? token : null;
+}
+
 @Injectable()
-export class JwtAccessStrategy extends PassportStrategy(Strategy, 'jwt-access') {
+export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
     constructor(appConfigService: AppConfigService) {
         const jwtConfig = appConfigService.getJwtConfig();
         super({
-            jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-            secretOrKey: jwtConfig.JWT_ACCESS_SECRET,
+            jwtFromRequest: ExtractJwt.fromExtractors([extractRefreshToken]),
+            secretOrKey: jwtConfig.JWT_REFRESH_SECRET,
             ignoreExpiration: false,
             issuer: jwtConfig.JWT_ISSUER,
             audience: jwtConfig.JWT_AUDIENCE,
@@ -28,14 +33,13 @@ export class JwtAccessStrategy extends PassportStrategy(Strategy, 'jwt-access') 
         });
     }
 
-    validate(payload: AccessJwtPayload): AuthenticatedUser {
-        if (payload.typ !== 'access' || !payload.sub || !payload.sid) {
-            throw new UnauthorizedException('invalid_access_token');
+    validate(payload: RefreshJwtPayload): AuthenticatedUser {
+        if (payload.typ !== 'refresh' || !payload.sub || !payload.sid || !payload.jti) {
+            throw new UnauthorizedException('refresh_invalid');
         }
 
         return {
             sub: payload.sub,
-            email: payload.email,
             sid: payload.sid,
             typ: payload.typ,
             iat: payload.iat,

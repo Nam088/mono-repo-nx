@@ -30,7 +30,6 @@ message RegisterRequest {
   string email = 1;
   string name = 2;
   string password = 3;
-  optional string idempotency_key = 4;
 }
 
 message RegisterResponse {

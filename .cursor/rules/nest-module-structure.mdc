@@ -1,0 +1,59 @@
+---
+description: Nx + Nest layout — feature folders in apps, shared code in libs/@nam088/*, when to extract.
+globs: apps/**/src/**/*.ts
+alwaysApply: false
+---
+
+# Nx apps vs shared libs
+
+- **`apps/*`**: deployable Nest (or other) apps. Feature wiring lives under `src/app/modules/<feature>/` (see below). Imports shared code via **`@nam088/...`** path aliases from [`tsconfig.base.json`](tsconfig.base.json).
+- **`libs/*`**: reusable libraries with their own `project.json` / `tsconfig`. Publish a **stable public API** from each lib’s `src/index.ts` (or documented entry). Apps must not duplicate what already belongs in a lib.
+
+## When to move code into `libs/`
+
+Prefer a **new or existing lib** when:
+
+- **Two or more apps** (or two unrelated features in different apps) need the same logic, types, or Nest providers.
+- The code is **domain-agnostic** infrastructure: config, gRPC/proto, DB entities, Redis, RabbitMQ, generic utilities (this repo already uses `@nam088/config`, `@nam088/grpc`, `@nam088/postgresql`, `@nam088/redis`, `@nam088/rabbitmq`, `@nam088/utils`).
+- You want a **clear boundary** for testing, versioning, or future reuse without copying folders between apps.
+
+Keep in **`apps/<app>/src/app/...`** when:
+
+- It is **HTTP route + gateway composition** specific to that deployable (e.g. API BFF routes calling upstream gRPC).
+- It depends on **app-only** env, single-app `AppModule` wiring, or one-off integration.
+
+**Heuristic:** if you copy-paste a service/guard/DTO into a second app, stop — extract to `libs/<name>` and add a `paths` entry (or extend an existing `@nam088/*` lib).
+
+## Feature module shape (`apps/*/src/app/modules/<feature>/`)
+
+| Location | Contents |
+|----------|----------|
+| Root | **Only** `<feature>.module.ts` (optional barrel `index.ts` later). |
+| `controllers/` | `*.controller.ts` + `*.controller.spec.ts`. |
+| `services/` | `*.service.ts` + `*.service.spec.ts`. |
+| `guards/` | `*.guard.ts`. |
+| `strategies/` | Passport (or similar) `*.strategy.ts`. |
+| `types/` | Feature-local types. |
+| `dto/` | DTOs used **only** by this feature; otherwise use `app/dto/` or a **lib** if shared across apps. |
+| `cqrs/commands/` | CQRS **command** classes only (`*.command.ts`). |
+| `cqrs/handlers/` | CQRS **command handlers** only (`*.handler.ts`), importing their command from `../commands/<name>.command`. |
+| `cqrs/queries/` | Optional: query + query-handler split mirrors commands (`queries/*.query.ts` vs `query-handlers/` if you grow further). |
+
+## HTTP & paths
+
+- Use **`@Controller('prefix')`** + short route paths; do not repeat `'prefix/...'` on every handler.
+- Relative imports from nested folders (`services/`, `controllers/`) to `app/clients` or `app/dto`: count `../` carefully; prefer **path alias to a lib** over deep `../../../` when the target is shared.
+- **`createAuthGrpcClientOptions(__dirname, …)`**: keep `*.module.ts` at the **feature root** so `__dirname` stays aligned with bundled proto layout unless you intentionally change asset paths.
+
+## Anti-patterns
+
+- Flattening every controller/service/guard next to `*.module.ts` once the feature grows.
+- Re-implementing **proto types**, **DB config**, or **config keys** in an app when `@nam088/grpc` / `@nam088/postgresql` / `@nam088/config` already cover them.
+- Putting **BFF-only** HTTP concerns into `libs/` unless a second consumer really exists (avoid premature abstraction).
+
+## New shared lib (quick checklist)
+
+1. `npx nx g @nx/js:lib libs/<scope>/<name> --name=<name> --unitTestRunner=vitest --no-interactive` (or team’s generator).
+2. Export public API from lib `src/index.ts`.
+3. Add `"@nam088/<name>": ["./libs/.../src/index.ts"]` to `tsconfig.base.json` `paths`.
+4. Add the lib as **`implicitDependencies` or `dependsOn`** where needed in `project.json` targets.

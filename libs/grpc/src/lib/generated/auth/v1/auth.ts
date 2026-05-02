@@ -28,7 +28,6 @@ export interface RegisterRequest {
     email: string;
     name: string;
     password: string;
-    idempotencyKey?: string | undefined;
 }
 
 export interface RegisterResponse {
@@ -223,9 +222,6 @@ export const RegisterRequest: MessageFns<RegisterRequest> = {
         if (message.password !== '') {
             writer.uint32(26).string(message.password);
         }
-        if (message.idempotencyKey !== undefined) {
-            writer.uint32(34).string(message.idempotencyKey);
-        }
         return writer;
     },
 
@@ -258,14 +254,6 @@ export const RegisterRequest: MessageFns<RegisterRequest> = {
                     }
 
                     message.password = reader.string();
-                    continue;
-                }
-                case 4: {
-                    if (tag !== 34) {
-                        break;
-                    }
-
-                    message.idempotencyKey = reader.string();
                     continue;
                 }
             }

@@ -1,6 +1,6 @@
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -15,13 +15,7 @@ describe('AppController', () => {
                 {
                     provide: AppService,
                     useValue: {
-                        getData: () => ({ message: 'ok' }),
-                        pingAuth: () => ({ message: 'pong' }),
-                        registerAuth: () => ({}),
-                        loginAuth: () => ({}),
-                        refreshAuth: () => ({}),
-                        logoutAuth: () => ({}),
-                        validateAccessToken: () => ({}),
+                        getData: vi.fn(async () => ({ message: 'ok' })),
                     },
                 },
             ],
@@ -29,9 +23,9 @@ describe('AppController', () => {
     });
 
     describe('getData', () => {
-        it('should proxy getData', () => {
+        it('should proxy getData', async () => {
             const appController = app.get<AppController>(AppController);
-            expect(appController.getData()).toEqual({ message: 'ok' });
+            await expect(appController.getData()).resolves.toEqual({ message: 'ok' });
         });
     });
 });

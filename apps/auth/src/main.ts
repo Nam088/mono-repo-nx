@@ -9,7 +9,7 @@ import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 
 import { AppModule } from './app/app.module';
-import { GrpcLoggingInterceptor } from './app/interceptors/grpc-logging.interceptor';
+import { GrpcLoggingInterceptor } from './app/modules/auth/interceptors/grpc-logging.interceptor';
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);

@@ -1,8 +1,8 @@
 import { auth } from '@nam088/grpc';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 
-import { AuthService } from '../../auth.service';
-import { RegisterCommand } from './register.command';
+import { AuthService } from '../../services/auth.service';
+import { RegisterCommand } from '../commands/register.command';
 
 @CommandHandler(RegisterCommand)
 export class RegisterCommandHandler implements ICommandHandler<RegisterCommand, auth.v1.RegisterResponse> {
@@ -13,7 +13,6 @@ export class RegisterCommandHandler implements ICommandHandler<RegisterCommand, 
             email: command.email,
             name: command.name,
             password: command.password,
-            idempotencyKey: command.idempotencyKey,
         });
     }
 }
