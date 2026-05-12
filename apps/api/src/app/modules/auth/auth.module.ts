@@ -8,7 +8,6 @@ import { GrpcClientWrapperService } from '../../clients/grpc-client-wrapper.serv
 import { AuthController } from './controllers/auth.controller';
 import { JwtAccessGuard } from './guards/jwt-access.guard';
 import { AuthGatewayService } from './services/auth-gateway.service';
-import { GrpcPermissionsResolverService } from './services/grpc-permissions-resolver.service';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 
 @Module({
@@ -24,13 +23,7 @@ import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
         ]),
     ],
     controllers: [AuthController],
-    providers: [
-        GrpcClientWrapperService,
-        AuthGatewayService,
-        GrpcPermissionsResolverService,
-        JwtRefreshStrategy,
-        JwtAccessGuard,
-    ],
-    exports: [AuthGatewayService, PassportModule, JwtRefreshStrategy, JwtAccessGuard, GrpcPermissionsResolverService],
+    providers: [GrpcClientWrapperService, AuthGatewayService, JwtRefreshStrategy, JwtAccessGuard],
+    exports: [AuthGatewayService, PassportModule, JwtRefreshStrategy, JwtAccessGuard],
 })
 export class AuthModule {}
