@@ -12,12 +12,16 @@ export class PolicyRegistry {
     /** Register a policy into the registry */
     async register(policyClass: Type<ResourcePolicy>) {
         const instance = await this.moduleRef.create(policyClass);
-        console.log(`[PolicyRegistry] Registering policy for resource: ${instance.resourceType}`);
         this.policies.set(instance.resourceType, instance);
     }
 
     /** Get a policy instance by resource name */
     get(resourceType: string): ResourcePolicy | undefined {
         return this.policies.get(resourceType);
+    }
+
+    /** Get all registered policy instances */
+    all(): ResourcePolicy[] {
+        return Array.from(this.policies.values());
     }
 }

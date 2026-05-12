@@ -1,0 +1,45 @@
+---
+description: Security standards for error handling to prevent information leakage by obfuscating internal system errors.
+globs: apps/**/*.{ts,js}, libs/**/*.{ts,js}
+---
+
+# Error Handling & Security
+
+To prevent information leakage and enhance application security, all internal system errors must be obfuscated before being returned to the client.
+
+## 1. No Internal Details in Responses
+- **NEVER** return raw database errors, stack traces, or internal service error messages directly to the client.
+- **NEVER** expose internal implementation details (e.g., "Table 'users' not found", "Connection timeout at 10.0.0.1", "gRPC status 14").
+
+## 2. Use Generic Error Messages
+- For all unhandled or internal server errors (HTTP 500), return a generic message such as:
+  - `"An internal server error occurred. Please try again later."`
+  - `"Something went wrong on our end."`
+- For specific domain errors, use clear but safe messages (e.g., `"Invalid credentials"` instead of `"User 'admin' does not exist"`).
+
+## 3. Map System Errors to Safe Exceptions
+- Use Exception Filters (e.g., `GrpcProxyExceptionFilter`) to catch and map low-level errors to high-level, sanitized HTTP exceptions.
+- The `errorResponse` utility from `@nam088/utils` should be used to standardize the response format while ensuring the `message` is user-safe.
+
+## 4. Log the Real Error Internally
+- While the user sees a generic message, the **real error** (including stack trace and internal details) **MUST** be logged using the project's logging standards.
+- Ensure the log contains a correlation ID (e.g., `traceId` or `requestId`) that is also returned to the user, allowing developers to look up the real error in the logs.
+
+## 5. Implementation Pattern
+- **Incorrect**:
+  ```ts
+  try {
+    await this.repo.save(data);
+  } catch (err) {
+    throw new InternalServerErrorException(err.message); // Leakage!
+  }
+  ```
+- **Correct**:
+  ```ts
+  try {
+    await this.repo.save(data);
+  } catch (err) {
+    this.logger.error('Failed to save data', err.stack);
+    throw new InternalServerErrorException('Failed to process your request.');
+  }
+  ```

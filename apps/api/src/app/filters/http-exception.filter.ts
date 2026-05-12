@@ -1,9 +1,11 @@
 import { errorResponse } from '@nam088/utils';
-import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from '@nestjs/common';
+import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import type { Request, Response } from 'express';
 
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
+    private readonly logger = new Logger(HttpExceptionFilter.name);
+
     catch(exception: HttpException, host: ArgumentsHost): void {
         const ctx = host.switchToHttp();
         const response = ctx.getResponse<Response>();
@@ -11,6 +13,15 @@ export class HttpExceptionFilter implements ExceptionFilter {
         const traceId = this.extractTraceId(request.headers?.['x-request-id']);
 
         const status = exception.getStatus();
+
+        if (status >= 500) {
+            this.logger.error(`HTTP error ${status}: ${exception.message}`, exception.stack, {
+                traceId,
+                path: request.url,
+            });
+        }
+
+        const message = status >= 500 ? 'An internal server error occurred' : exception.message;
         const exceptionResponse = exception.getResponse();
         const details =
             typeof exceptionResponse === 'object' && exceptionResponse !== null ? exceptionResponse : undefined;
@@ -19,10 +30,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
             errorResponse(
                 {
                     code: this.buildErrorCode(status),
-                    message: exception.message,
+                    message,
                     details,
                 },
-                exception.message,
+                message,
                 {
                     timestamp: new Date().toISOString(),
                     path: request.url,

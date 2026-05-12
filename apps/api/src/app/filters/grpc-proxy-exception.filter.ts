@@ -1,5 +1,5 @@
 import { errorResponse } from '@nam088/utils';
-import { ArgumentsHost, Catch, ExceptionFilter } from '@nestjs/common';
+import { ArgumentsHost, Catch, ExceptionFilter, Logger } from '@nestjs/common';
 import type { Request, Response } from 'express';
 
 import { GrpcProxyException } from '../errors/grpc-proxy.exception';
@@ -7,11 +7,19 @@ import { mapGrpcErrorToHttpException } from '../grpc-to-http-exception';
 
 @Catch(GrpcProxyException)
 export class GrpcProxyExceptionFilter implements ExceptionFilter {
+    private readonly logger = new Logger(GrpcProxyExceptionFilter.name);
+
     catch(exception: GrpcProxyException, host: ArgumentsHost): void {
         const ctx = host.switchToHttp();
         const response = ctx.getResponse<Response>();
         const request = ctx.getRequest<Request & { headers?: Record<string, string | string[] | undefined> }>();
         const traceId = this.extractTraceId(request.headers?.['x-request-id']);
+
+        this.logger.error(
+            `gRPC error caught in proxy filter: [${exception.grpcError.code}] ${exception.grpcError.details || exception.grpcError.message}`,
+            exception.stack,
+            { traceId, url: request.url },
+        );
 
         const mappedException = mapGrpcErrorToHttpException(exception.grpcError);
         const status = mappedException.getStatus();

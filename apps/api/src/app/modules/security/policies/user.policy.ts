@@ -43,8 +43,9 @@ export class UserPolicy extends ResourcePolicy<UserEntity> {
     @PolicyRule('Update')
     canUpdate(user: PolicyUser, resource: UserEntity): boolean {
         const grantedPermissions = (user.permissions || []) as PermissionKey[];
-        const isAdmin = PERMISSIONS.covers(grantedPermissions, P.user.manage);
-        return isAdmin || user.sub === resource.id;
+        const hasUpdatePermission = PERMISSIONS.covers(grantedPermissions, P.user.update);
+
+        return hasUpdatePermission || user.sub === resource.id;
     }
 
     /**
@@ -62,9 +63,9 @@ export class UserPolicy extends ResourcePolicy<UserEntity> {
     @PolicyRule('Delete')
     canDelete(user: PolicyUser, resource: UserEntity): boolean {
         const grantedPermissions = (user.permissions || []) as PermissionKey[];
-        const isAdmin = PERMISSIONS.covers(grantedPermissions, P.user.manage);
+        const hasDeletePermission = PERMISSIONS.covers(grantedPermissions, P.user.delete);
 
-        // Ownership check or Admin override
-        return isAdmin || user.sub === resource.id;
+        // Ownership check or Delete permission
+        return hasDeletePermission || user.sub === resource.id;
     }
 }

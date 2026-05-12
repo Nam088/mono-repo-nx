@@ -22,7 +22,21 @@ export function mapGrpcErrorToHttpException(error: unknown): HttpException {
     }
 
     const grpcError = error as GrpcErrorLike;
-    const message = grpcError.details || grpcError.message || 'Internal server error';
+
+    // For 5xx-equivalent errors, always use generic messages to prevent information leakage
+    const isInternalError =
+        grpcError.code === undefined ||
+        [
+            GrpcStatus.INTERNAL,
+            GrpcStatus.UNKNOWN,
+            GrpcStatus.DATA_LOSS,
+            GrpcStatus.UNIMPLEMENTED,
+            GrpcStatus.UNAVAILABLE,
+        ].includes(grpcError.code as number);
+
+    const message = isInternalError
+        ? 'Internal server error'
+        : grpcError.details || grpcError.message || 'Internal server error';
 
     switch (grpcError.code) {
         case GrpcStatus.INVALID_ARGUMENT:
@@ -44,11 +58,11 @@ export function mapGrpcErrorToHttpException(error: unknown): HttpException {
         case GrpcStatus.DEADLINE_EXCEEDED:
             return new RequestTimeoutException(message);
         case GrpcStatus.UNAVAILABLE:
-            return new ServiceUnavailableException(message);
+            return new ServiceUnavailableException('Service temporarily unavailable');
         case GrpcStatus.CANCELLED:
-            return new GatewayTimeoutException(message);
+            return new GatewayTimeoutException('Request was cancelled');
         default:
-            return new InternalServerErrorException(message);
+            return new InternalServerErrorException('An internal server error occurred');
     }
 }
 

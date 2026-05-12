@@ -45,7 +45,6 @@ export class PolicyGuard implements CanActivate {
 
         // 4. Authorize using explicit action
         const user = request.user;
-        console.dir(user, { depth: null });
 
         if (!user) {
             throw new ForbiddenException('User context is required for Policy checks');
