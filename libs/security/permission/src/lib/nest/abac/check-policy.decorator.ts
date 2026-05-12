@@ -8,12 +8,16 @@ export const CHECK_POLICY_KEY = Symbol('@nam088/permission:check-policy');
  */
 export interface AppPolicyMap {
     /** Internal use only to avoid empty interface lint error */
-    readonly __brand?: never;
+    readonly __brand: never;
 }
 
 export type ResourceKey = keyof AppPolicyMap extends '__brand' ? string : keyof AppPolicyMap;
 
-export type ActionKey<K extends ResourceKey> = K extends keyof AppPolicyMap ? AppPolicyMap[K] : string;
+export type ActionKey<K extends ResourceKey> = K extends keyof AppPolicyMap
+    ? AppPolicyMap[K] extends never
+        ? string
+        : AppPolicyMap[K]
+    : string;
 
 export interface PolicySpec<K extends ResourceKey = ResourceKey> {
     resource: K;

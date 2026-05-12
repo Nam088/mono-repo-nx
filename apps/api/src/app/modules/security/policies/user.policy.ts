@@ -3,7 +3,7 @@ import { EntityRepository } from '@mikro-orm/postgresql';
 import type { PermissionKey, PolicyUser } from '@nam088/permission';
 import { P, PERMISSIONS, PolicyRule, ResourcePolicy } from '@nam088/permission';
 import { UserEntity } from '@nam088/postgresql';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 declare module '@nam088/permission' {
     interface AppPolicyMap {
@@ -14,6 +14,7 @@ declare module '@nam088/permission' {
 @Injectable()
 export class UserPolicy extends ResourcePolicy<UserEntity> {
     readonly resourceType = 'User';
+    private readonly logger = new Logger(UserPolicy.name);
 
     constructor(
         @InjectRepository(UserEntity)
@@ -23,10 +24,8 @@ export class UserPolicy extends ResourcePolicy<UserEntity> {
     }
 
     async fetch(id: string): Promise<UserEntity | null> {
-        console.log(`[UserPolicy] Fetching User ${id} from Database...`);
-        const user = await this.userRepository.findOne({ id });
-        console.dir(user, { depth: null });
-        return user;
+        this.logger.log(`Fetching User ${id} from Database...`);
+        return this.userRepository.findOne({ id });
     }
 
     /**
@@ -34,7 +33,7 @@ export class UserPolicy extends ResourcePolicy<UserEntity> {
      */
     @PolicyRule('IsOwner')
     checkOwner(user: PolicyUser, resource: UserEntity): boolean {
-        console.log(`[UserPolicy] Checking Ownership for User ${user.sub} and Resource ${resource.id}`);
+        this.logger.log(`Checking Ownership for User ${user.sub} and Resource ${resource.id}`);
         return user.sub === resource.id;
     }
 

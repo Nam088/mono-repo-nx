@@ -1,0 +1,32 @@
+# Logging Standards
+
+All logging within the project MUST follow these standards to ensure proper monitoring and security of the application.
+
+## 1. No Console Logs
+- **NEVER** use `console.log`, `console.warn`, `console.error`, or `console.debug`.
+- Use the NestJS `Logger` class (or the project's designated logging utility).
+- For class-based services/controllers, prefer private logger instances:
+  ```ts
+  private readonly logger = new Logger(MyService.name);
+  ```
+
+## 2. Proper Log Levels
+Choose the appropriate level based on the situation:
+- **`error`**: For actual errors that need investigation (e.g., failed database operations, internal server errors). Include stack traces when possible.
+- **`warn`**: For unexpected situations that don't stop the flow (e.g., deprecated API usage, retries).
+- **`log` / `info`**: For significant milestones in the application flow (e.g., "Service started", "User registered").
+- **`debug`**: For detailed information useful during development.
+- **`verbose`**: For high-volume, extremely detailed logs.
+
+## 3. Data Privacy & Security
+- **NEVER** log sensitive information, including but not limited to:
+  - Passwords or hash strings.
+  - Credit card numbers or CVV.
+  - Personal identification numbers (PINs).
+  - Auth tokens (JWTs) or API keys.
+  - Full PII (Personally Identifiable Information) unless strictly necessary for business logic and allowed by security policy.
+- Use **masking** or **sanitization** if you must log an object containing sensitive fields.
+
+## 4. Structured Logging
+- Prefer structured log messages over simple strings for easier parsing by log aggregators (ELK, Datadog, etc.).
+- Avoid string interpolation (`${variable}`) inside log messages if it can be passed as a separate metadata object.
