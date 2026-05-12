@@ -1,9 +1,7 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
-import { PERMISSION_METADATA_KEY } from '../permission.constants';
-import type { PermissionRequirement } from '../require-permission.decorator';
-import { CHECK_POLICY_KEY, PolicySpec } from './check-policy.decorator';
+import { CHECK_POLICY_KEY, type PolicySpec, type ResourceKey } from './check-policy.decorator';
 import { PolicyRegistry } from './policy.registry';
 
 @Injectable()
@@ -17,7 +15,7 @@ export class PolicyGuard implements CanActivate {
         const request = context.switchToHttp().getRequest();
 
         // 1. Get Policy check information
-        const policySpec = this.reflector.getAllAndOverride<PolicySpec | undefined>(CHECK_POLICY_KEY, [
+        const policySpec = this.reflector.getAllAndOverride<PolicySpec<ResourceKey> | undefined>(CHECK_POLICY_KEY, [
             context.getHandler(),
             context.getClass(),
         ]);
@@ -25,13 +23,7 @@ export class PolicyGuard implements CanActivate {
         // 2. Skip ABAC check if @CheckPolicy is not declared
         if (!policySpec) return true;
 
-        // 3. Get Permission information (to determine the action)
-        const requirement = this.reflector.getAllAndOverride<PermissionRequirement | undefined>(
-            PERMISSION_METADATA_KEY,
-            [context.getHandler(), context.getClass()],
-        );
-
-        // 4. Fetch Resource
+        // 3. Fetch Resource
         const policy = this.registry.get(policySpec.resource);
         if (!policy) {
             throw new Error(`No Policy registered for resource: ${policySpec.resource}`);
@@ -51,14 +43,18 @@ export class PolicyGuard implements CanActivate {
         if (!request.resources) request.resources = {};
         request.resources[policySpec.resource] = resource;
 
-        // 5. Authorize
+        // 4. Authorize using explicit action
         const user = request.user;
-        const action = requirement?.keys[0]?.split(':')[1] || 'access';
+        console.dir(user, { depth: null });
 
-        const isAllowed = await policy.authorize(user, resource, action, policySpec.rule);
+        if (!user) {
+            throw new ForbiddenException('User context is required for Policy checks');
+        }
+
+        const isAllowed = await policy.authorize(user, resource, policySpec.action);
 
         if (!isAllowed) {
-            throw new ForbiddenException(`Access denied by ${policySpec.resource} policy`);
+            throw new ForbiddenException(`Access denied by ${policySpec.resource} policy: ${policySpec.action}`);
         }
 
         return true;

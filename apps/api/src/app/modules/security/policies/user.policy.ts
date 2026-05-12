@@ -5,6 +5,12 @@ import { P, PERMISSIONS, PolicyRule, ResourcePolicy } from '@nam088/permission';
 import { UserEntity } from '@nam088/postgresql';
 import { Injectable } from '@nestjs/common';
 
+declare module '@nam088/permission' {
+    interface AppPolicyMap {
+        User: 'Read' | 'Update' | 'IsOwner' | 'Delete';
+    }
+}
+
 @Injectable()
 export class UserPolicy extends ResourcePolicy<UserEntity> {
     readonly resourceType = 'User';
@@ -18,7 +24,9 @@ export class UserPolicy extends ResourcePolicy<UserEntity> {
 
     async fetch(id: string): Promise<UserEntity | null> {
         console.log(`[UserPolicy] Fetching User ${id} from Database...`);
-        return this.userRepository.findOne({ id });
+        const user = await this.userRepository.findOne({ id });
+        console.dir(user, { depth: null });
+        return user;
     }
 
     /**
@@ -26,13 +34,14 @@ export class UserPolicy extends ResourcePolicy<UserEntity> {
      */
     @PolicyRule('IsOwner')
     checkOwner(user: PolicyUser, resource: UserEntity): boolean {
+        console.log(`[UserPolicy] Checking Ownership for User ${user.sub} and Resource ${resource.id}`);
         return user.sub === resource.id;
     }
 
     /**
      * Default rule for 'update' action
      */
-    @PolicyRule('update')
+    @PolicyRule('Update')
     canUpdate(user: PolicyUser, resource: UserEntity): boolean {
         const grantedPermissions = (user.permissions || []) as PermissionKey[];
         const isAdmin = PERMISSIONS.covers(grantedPermissions, P.user.manage);
@@ -42,7 +51,7 @@ export class UserPolicy extends ResourcePolicy<UserEntity> {
     /**
      * Default rule for 'read' action
      */
-    @PolicyRule('read')
+    @PolicyRule('Read')
     canRead(_user: PolicyUser, _resource: UserEntity): boolean {
         return true;
     }
@@ -51,7 +60,7 @@ export class UserPolicy extends ResourcePolicy<UserEntity> {
      * Rule for 'delete' action
      * Only Admins or the Owner themselves can delete.
      */
-    @PolicyRule('delete')
+    @PolicyRule('Delete')
     canDelete(user: PolicyUser, resource: UserEntity): boolean {
         const grantedPermissions = (user.permissions || []) as PermissionKey[];
         const isAdmin = PERMISSIONS.covers(grantedPermissions, P.user.manage);

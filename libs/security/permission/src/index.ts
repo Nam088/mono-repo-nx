@@ -16,7 +16,7 @@ export type { PermissionAnySpec, PermissionRequirement } from './lib/nest/requir
 export { RequirePermission } from './lib/nest/require-permission.decorator';
 
 // ABAC Exports (Simplified)
-export { CheckPolicy, type PolicySpec } from './lib/nest/abac/check-policy.decorator';
+export { type AppPolicyMap, Check, CheckPolicy, type PolicySpec } from './lib/nest/abac/check-policy.decorator';
 export { PolicyGuard } from './lib/nest/abac/policy.guard';
 export { PolicyModule } from './lib/nest/abac/policy.module';
 export { PolicyRegistry } from './lib/nest/abac/policy.registry';

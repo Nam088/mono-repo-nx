@@ -6,7 +6,6 @@ export type PolicyUser = { readonly sub: string; readonly permissions?: string[]
 
 /**
  * Type definition for a Policy Strategy method.
- * Ensures strict typing for parameters and return values.
  */
 export type PolicyStrategy<T = unknown> = (user: PolicyUser, resource: T) => boolean | Promise<boolean>;
 
@@ -23,30 +22,37 @@ export abstract class ResourcePolicy<T = unknown> {
 
     /**
      * Handles authorization by finding the appropriate strategy method marked with @PolicyRule.
-     * Falls back to false if no strategy is found.
      */
-    async authorize(user: PolicyUser, resource: T, action: string, rule?: string): Promise<boolean> {
-        const strategyName = rule || action;
-        const strategy = this.findStrategy(strategyName);
+    async authorize(user: PolicyUser, resource: T, action: string): Promise<boolean> {
+        const strategy = this.findStrategy(action);
 
-        if (strategy) {
-            return await strategy.call(this, user, resource);
+        if (!strategy) {
+            return false;
         }
 
-        return false;
+        return await strategy(user, resource);
     }
 
     /**
-     * Scans the class for a method decorated with @PolicyRule(name).
+     * Scans the class prototype for a method decorated with @PolicyRule(name).
      */
     private findStrategy(name: string): PolicyStrategy<T> | undefined {
         const prototype = Object.getPrototypeOf(this);
         const methodNames = Object.getOwnPropertyNames(prototype);
 
-        for (const methodName of methodNames) {
-            const ruleName = Reflect.getMetadata(POLICY_RULE_METHOD_KEY, prototype, methodName);
-            if (ruleName === name) {
-                return (this as unknown as Record<string, PolicyStrategy<T>>)[methodName];
+        // Find the first method that has the matching @PolicyRule metadata
+        const targetMethodName = methodNames.find((methodName) => {
+            const method = (this as Record<string, unknown>)[methodName];
+            if (typeof method !== 'function' || methodName === 'constructor') {
+                return false;
+            }
+            return Reflect.getMetadata(POLICY_RULE_METHOD_KEY, method) === name;
+        });
+
+        if (targetMethodName) {
+            const method = (this as Record<string, unknown>)[targetMethodName];
+            if (typeof method === 'function') {
+                return method.bind(this) as PolicyStrategy<T>;
             }
         }
 

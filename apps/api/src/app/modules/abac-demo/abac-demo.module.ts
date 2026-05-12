@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
 
+import { AuthModule } from '../auth/auth.module';
 import { AbacDemoController } from './abac-demo.controller';
 
 @Module({
+    imports: [AuthModule],
     controllers: [AbacDemoController],
-    providers: [], // No need to declare here anymore as PolicyModule is global
 })
 export class AbacDemoModule {}

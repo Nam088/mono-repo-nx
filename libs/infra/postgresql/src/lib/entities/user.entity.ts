@@ -14,5 +14,5 @@ export class UserEntity {
     name!: string;
 
     @Property({ type: 'string', length: 255, fieldName: 'password_hash' })
-    passwordHash!: string;
+    passwordHash?: string;
 }

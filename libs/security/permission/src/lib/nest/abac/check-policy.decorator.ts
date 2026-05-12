@@ -2,27 +2,37 @@ import { applyDecorators, SetMetadata } from '@nestjs/common';
 
 export const CHECK_POLICY_KEY = Symbol('@nam088/permission:check-policy');
 
-export interface PolicySpec {
-    /** Resource name (e.g., 'User') */
-    resource: string;
-    /** ID source (default: 'params') */
+/**
+ * Global registry for Policies.
+ * Augmented in application code.
+ */
+export interface AppPolicyMap {
+    /** Internal use only to avoid empty interface lint error */
+    readonly __brand?: never;
+}
+
+export type ResourceKey = keyof AppPolicyMap extends '__brand' ? string : keyof AppPolicyMap;
+
+export type ActionKey<K extends ResourceKey> = K extends keyof AppPolicyMap ? AppPolicyMap[K] : string;
+
+export interface PolicySpec<K extends ResourceKey = ResourceKey> {
+    resource: K;
+    action: ActionKey<K>;
     source?: 'params' | 'body' | 'query';
-    /** Field name containing the ID (default: 'id') */
     idField?: string;
-    /** Specific check rule (falls back to default action if not provided) */
-    rule?: string;
 }
 
 /**
- * Decorator to check Policy for a Resource.
- * Supports automatic fetching and ABAC logic evaluation.
+ * Base Decorator to check Policy for a Resource.
  */
-export function CheckPolicy(
-    resource: string,
-    options: Omit<PolicySpec, 'resource'> = {},
+export function CheckPolicy<K extends ResourceKey>(
+    resource: K,
+    action: ActionKey<K>,
+    options: Omit<PolicySpec<K>, 'resource' | 'action'> = {},
 ): MethodDecorator & ClassDecorator {
-    const spec: PolicySpec = {
+    const spec: PolicySpec<K> = {
         resource,
+        action,
         source: 'params',
         idField: 'id',
         ...options,
@@ -30,3 +40,17 @@ export function CheckPolicy(
 
     return applyDecorators(SetMetadata(CHECK_POLICY_KEY, spec));
 }
+
+/**
+ * Smart Decorator Factory for better DX and autocomplete.
+ */
+export const Check = new Proxy({} as object, {
+    get(_, resource: string) {
+        return (action: string, options?: object) => CheckPolicy(resource as never, action as never, options as never);
+    },
+}) as {
+    [K in ResourceKey]: (
+        action: ActionKey<K>,
+        options?: Omit<PolicySpec<K>, 'resource' | 'action'>,
+    ) => MethodDecorator & ClassDecorator;
+};

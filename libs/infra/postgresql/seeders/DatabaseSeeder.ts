@@ -11,6 +11,7 @@ export class DatabaseSeeder extends Seeder {
             em.create(UserEntity, {
                 email: 'admin@nvn.local',
                 name: 'System Admin',
+                // passwordHash: 'admin',
             });
         }
     }
