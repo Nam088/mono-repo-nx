@@ -1,0 +1,17 @@
+---
+trigger: always_on
+glob: apps/api/src/**/*.ts
+description: Standard HTTP response envelope structure for APIs.
+---
+
+# HTTP API (`apps/api`)
+
+- **Envelope**: wrap successful payloads with `successResponse` from `@nam088/utils`; document routes with `@ApiEndpoint({ ... })` (summary, success, errors).
+- **Layering**: `controllers/` handle HTTP + DTOs only; call `*GatewayService` for unary gRPC (metadata/context via the project’s wrapper).
+- **DTOs**: place under `apps/api/src/app/dto/` (or `modules/<feature>/dto/` if feature-local); use `class-validator` plus `@ApiProperty` / `@ApiPropertyOptional` for Swagger.
+- **Paths**: use `@Controller('auth')` with short method paths (`register`, `login`, …); do not repeat the controller prefix on every handler.
+
+## Anti-patterns
+
+- Calling `ClientGrpc` directly from a controller instead of an injected gateway service.
+- Returning raw gRPC objects without the envelope when the HTTP contract is standardized on `successResponse`.

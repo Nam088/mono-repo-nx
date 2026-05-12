@@ -36,6 +36,7 @@ export function buildRegistry<const Defs extends readonly PermissionDefinition<s
     const groupKeys: string[] = [];
     const meta = new Map<string, KeyMeta>();
     const byResource: Record<string, ReadonlyArray<string>> = {};
+    const keysByResource: Record<string, string[]> = {};
     const refs: Record<string, Readonly<Record<string, string>>> = {};
 
     for (const def of defs) {
@@ -45,6 +46,7 @@ export function buildRegistry<const Defs extends readonly PermissionDefinition<s
         resourceList.push(def.resource);
 
         const namesInResource: string[] = [];
+        const resourceKeys: string[] = [];
         const refMap: Record<string, string> = {};
 
         for (const [name, rawEntry] of Object.entries(def.actions)) {
@@ -69,6 +71,7 @@ export function buildRegistry<const Defs extends readonly PermissionDefinition<s
 
             meta.set(key, { resource: def.resource, name, def: entry, kind });
             allKeys.push(key);
+            resourceKeys.push(key);
             if (kind === 'action') {
                 actionKeys.push(key);
             } else {
@@ -79,6 +82,7 @@ export function buildRegistry<const Defs extends readonly PermissionDefinition<s
         }
 
         byResource[def.resource] = Object.freeze([...namesInResource]) as ReadonlyArray<string>;
+        keysByResource[def.resource] = Object.freeze([...resourceKeys]) as string[];
         refs[def.resource] = Object.freeze(refMap);
     }
 
@@ -229,6 +233,10 @@ export function buildRegistry<const Defs extends readonly PermissionDefinition<s
         );
     }
 
+    function getKeysByResource(resource: string): ReadonlyArray<string> {
+        return keysByResource[resource] ?? [];
+    }
+
     const registry = {
         keys: Object.freeze([...allKeys]),
         actionKeys: Object.freeze([...actionKeys]),
@@ -242,6 +250,7 @@ export function buildRegistry<const Defs extends readonly PermissionDefinition<s
         expand,
         covers,
         list,
+        getKeysByResource,
     };
 
     return Object.freeze(registry) as unknown as PermissionRegistry<Defs>;

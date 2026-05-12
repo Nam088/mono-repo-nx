@@ -35,6 +35,7 @@ export class PermissionModule {
         const resolverProvider = buildResolverProvider(options.resolver);
         return {
             module: PermissionModule,
+            global: true,
             imports: options.imports ?? [],
             providers: [...(options.providers ?? []), resolverProvider, PermissionGuard],
             exports: [PermissionGuard, PERMISSIONS_RESOLVER],

@@ -28,3 +28,16 @@ export type PermissionKey = (typeof PERMISSIONS.keys)[number];
  * Compile-time literal type for declared resource names.
  */
 export type ResourceName = (typeof PERMISSIONS.resources)[number];
+
+/**
+ * Utility to get all permission keys.
+ * If a resource is provided, returns keys for that resource only.
+ */
+export function allP(): ReadonlyArray<PermissionKey>;
+export function allP<R extends ResourceName>(resource: R): ReadonlyArray<Extract<PermissionKey, `${R}:${string}`>>;
+export function allP<R extends ResourceName>(resource?: R): ReadonlyArray<PermissionKey> {
+    if (resource) {
+        return PERMISSIONS.getKeysByResource(resource) as ReadonlyArray<Extract<PermissionKey, `${R}:${string}`>>;
+    }
+    return PERMISSIONS.keys;
+}

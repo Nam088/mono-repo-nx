@@ -87,4 +87,5 @@ export interface PermissionRegistry<Defs extends readonly PermissionDefinition<s
     expand(key: PermissionKeyOf<Defs[number]>): ReadonlySet<PermissionKeyOf<Defs[number]>>;
     covers(granted: Iterable<PermissionKeyOf<Defs[number]>>, required: PermissionKeyOf<Defs[number]>): boolean;
     list(): ReadonlyArray<PermissionListItem<PermissionKeyOf<Defs[number]>>>;
+    getKeysByResource(resource: Defs[number]['resource']): ReadonlyArray<PermissionKeyOf<Defs[number]>>;
 }
